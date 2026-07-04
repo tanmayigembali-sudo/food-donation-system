@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PlateForward — Food Donation & Management System</title>
+<style>
+/* ============================================================
+   PlateForward — single-file demo app
+   Forest & Moss palette · Outfit / Figtree typography
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Figtree:wght@400;500;600&display=swap');
+
+:root {
+  --forest: #14532d;
+  --forest-2: #166534;
+  --moss: #4d7c0f;
+  --leaf: #bbf7d0;
+  --leaf-2: #ecfccb;
+  --amber: #f59e0b;
+  --amber-bg: #fef3c7;
+  --danger: #dc2626;
+  --bg: #f6faf5;
+  --surface: #ffffff;
+  --text: #0f1e14;
+  --muted: #5b6b60;
+  --border: #e2e8dc;
+  --shadow: 0 8px 30px -12px rgba(20,83,45,.18);
+  --radius: 14px;
+  --sidebar-w: 240px;
+}
+[data-theme="dark"] {
+  --bg: #0b1410;
+  --surface: #12211a;
+  --text: #e8f0ea;
+  --muted: #9cb0a3;
+  --border: #223228;
+  --leaf: #14532d;
+  --leaf-2: #1a3a25;
+  --amber-bg: #3a2a08;
+  --shadow: 0 8px 30px -12px rgba(0,0,0,.6);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Figtree', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.55;
+}
+h1,h2,h3,h4,h5 { font-family: 'Outfit', sans-serif; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+input, select, textarea {
+  font: inherit; color: inherit;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 12px; width: 100%;
+  transition: border-color .15s, box-shadow .15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--moss);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--moss) 20%, transparent);
+}
+label { font-size: 13px; font-weight: 600; color: var(--muted); display: block; margin-bottom: 6px; }
+.hidden { display: none !important; }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 16px; border-radius: 10px; font-weight: 600;
+  transition: transform .1s, box-shadow .2s, background .2s;
+  font-size: 14px;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: linear-gradient(135deg, var(--forest), var(--moss)); color: #fff; box-shadow: var(--shadow); }
+.btn-ghost { background: transparent; color: var(--text); }
+.btn-ghost:hover { background: color-mix(in oklab, var(--moss) 10%, transparent); }
+.btn-outline { border: 1px solid var(--border); background: var(--surface); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 6px 10px; font-size: 13px; }
+
+/* ---- Badges ---- */
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
+  border: 1px solid transparent;
+}
+.badge-pending  { background: var(--amber-bg); color: #92400e; }
+.badge-accepted { background: #dbeafe; color: #1e40af; }
+.badge-assigned { background: #ede9fe; color: #5b21b6; }
+.badge-collected{ background: #cffafe; color: #155e75; }
+.badge-delivered{ background: var(--leaf); color: var(--forest); }
+.badge-rejected { background: #fee2e2; color: var(--danger); }
+
+/* =====================  LANDING  ===================== */
+.landing-nav {
+  position: sticky; top: 0; z-index: 20;
+  backdrop-filter: blur(12px);
+  background: color-mix(in oklab, var(--bg) 80%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1200px; margin: 0 auto;
+  padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-family: 'Outfit'; font-weight: 800; font-size: 20px; }
+.brand-mark {
+  width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--forest), var(--moss));
+  display: grid; place-items: center; color: #fff; font-size: 18px;
+}
+.nav-links { display: flex; gap: 24px; font-weight: 500; }
+.nav-links a { color: var(--muted); }
+.nav-links a:hover { color: var(--forest); }
+.nav-actions { display: flex; align-items: center; gap: 10px; }
+
+.hero {
+  padding: 80px 24px 60px;
+  background: radial-gradient(ellipse at top, color-mix(in oklab, var(--leaf) 60%, transparent), transparent 60%);
+  text-align: center;
+}
+.hero-inner { max-width: 900px; margin: 0 auto; }
+.hero .eyebrow {
+  display: inline-block; padding: 6px 14px; border-radius: 999px;
+  background: var(--leaf); color: var(--forest); font-weight: 600; font-size: 13px;
+  margin-bottom: 20px;
+}
+.hero h1 { font-size: clamp(38px, 6vw, 62px); margin-bottom: 20px; }
+.hero h1 span { background: linear-gradient(135deg, var(--forest), var(--moss)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { font-size: 18px; color: var(--muted); max-width: 620px; margin: 0 auto 32px; }
+.hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+.section { padding: 72px 24px; max-width: 1200px; margin: 0 auto; }
+.section-head { text-align: center; margin-bottom: 48px; }
+.section-head .eyebrow { color: var(--moss); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; font-size: 12px; margin-bottom: 12px; display: block; }
+.section-head h2 { font-size: clamp(28px, 4vw, 40px); margin-bottom: 12px; }
+.section-head p { color: var(--muted); max-width: 640px; margin: 0 auto; }
+
+.role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.role-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 20px; padding: 32px; text-align: left;
+  transition: transform .25s, box-shadow .25s, border-color .25s;
+  cursor: pointer; position: relative; overflow: hidden;
+}
+.role-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--forest), var(--moss));
+  opacity: 0; transition: opacity .3s; z-index: 0;
+}
+.role-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); border-color: var(--moss); }
+.role-card > * { position: relative; z-index: 1; }
+.role-icon {
+  width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center;
+  background: var(--leaf); color: var(--forest); font-size: 26px; margin-bottom: 20px;
+}
+.role-card h3 { font-size: 22px; margin-bottom: 8px; }
+.role-card p { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+.role-card .arrow { color: var(--moss); font-weight: 600; font-size: 14px; }
+
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.feature {
+  padding: 24px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface);
+}
+.feature-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--leaf), var(--leaf-2));
+  display: grid; place-items: center; font-size: 22px; margin-bottom: 14px;
+}
+.feature h4 { margin-bottom: 6px; font-size: 17px; }
+.feature p { font-size: 14px; color: var(--muted); }
+
+.stats { background: linear-gradient(135deg, var(--forest), var(--moss)); color: #fff; padding: 60px 24px; }
+.stats-grid { max-width: 1000px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; text-align: center; }
+.stat-value { font-family: 'Outfit'; font-size: 46px; font-weight: 800; }
+.stat-label { opacity: .85; font-size: 14px; margin-top: 4px; }
+
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+@media (max-width: 720px) { .contact-grid { grid-template-columns: 1fr; } }
+.contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+.contact-item { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+.contact-item .ic {
+  width: 40px; height: 40px; border-radius: 10px; background: var(--leaf); color: var(--forest);
+  display: grid; place-items: center; flex-shrink: 0; font-size: 18px;
+}
+.contact-item strong { display: block; margin-bottom: 2px; }
+.contact-item span { color: var(--muted); font-size: 14px; }
+
+footer.site-footer {
+  background: var(--surface); border-top: 1px solid var(--border); padding: 40px 24px;
+  text-align: center; color: var(--muted); font-size: 14px;
+}
+
+/* =====================  APP SHELL  ===================== */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; padding: 20px 14px; position: sticky; top: 0; height: 100vh;
+  transition: transform .25s;
+}
+.sidebar .brand { padding: 0 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.side-nav { display: flex; flex-direction: column; gap: 2px; }
+.side-nav button {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
+  font-weight: 500; color: var(--muted); text-align: left;
+}
+.side-nav button:hover { background: var(--leaf-2); color: var(--forest); }
+.side-nav button.active { background: linear-gradient(135deg, var(--forest), var(--moss)); color: #fff; }
+.side-nav .ic { width: 20px; text-align: center; }
+.sidebar-footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); }
+
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.topbar {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.menu-btn { display: none; padding: 8px; border-radius: 8px; }
+.menu-btn:hover { background: var(--leaf-2); }
+.topbar-search { position: relative; }
+.topbar-search input { padding-left: 36px; min-width: 260px; }
+.topbar-search::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: .6; }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.icon-btn { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; position: relative; }
+.icon-btn:hover { background: var(--leaf-2); }
+.notif-dot { position: absolute; top: 8px; right: 10px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--forest), var(--moss)); color: #fff; display: grid; place-items: center; font-weight: 700; }
+
+.demo-banner {
+  background: var(--amber-bg); color: #92400e; padding: 8px 24px;
+  font-size: 13px; text-align: center; border-bottom: 1px solid var(--border);
+}
+
+.content { flex: 1; padding: 24px; overflow-x: hidden; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.page-head h1 { font-size: 28px; }
+.page-head p { color: var(--muted); margin-top: 4px; }
+
+/* ---- Stat cards ---- */
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.stat-card .label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+.stat-card .val { font-family: 'Outfit'; font-size: 28px; font-weight: 700; }
+.stat-card .hint { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.stat-card .ic-box { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; flex-shrink: 0; }
+.tone-forest { background: linear-gradient(135deg, var(--forest), var(--moss)); color: #fff; }
+.tone-leaf { background: var(--leaf); color: var(--forest); }
+.tone-amber { background: var(--amber-bg); color: #92400e; }
+.tone-moss { background: color-mix(in oklab, var(--moss) 20%, transparent); color: var(--forest); }
+
+/* ---- Cards / panels ---- */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.card h3 { font-size: 18px; margin-bottom: 14px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ---- Donation cards ---- */
+.donation-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.donation-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+  transition: transform .2s, box-shadow .2s; cursor: pointer;
+}
+.donation-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+.donation-img { aspect-ratio: 16/10; background: var(--leaf-2); position: relative; overflow: hidden; }
+.donation-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+.donation-card:hover .donation-img img { transform: scale(1.05); }
+.donation-img .badge { position: absolute; top: 10px; right: 10px; backdrop-filter: blur(4px); }
+.donation-body { padding: 16px; }
+.donation-body h4 { font-size: 16px; margin-bottom: 4px; }
+.donation-meta { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.veg-dot { display: inline-block; width: 10px; height: 10px; border: 2px solid #16a34a; border-radius: 2px; padding: 1px; position: relative; }
+.veg-dot::after { content: ''; display: block; width: 4px; height: 4px; background: #16a34a; border-radius: 50%; margin: 0 auto; }
+.nonveg-dot { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--danger); border-radius: 2px; padding: 1px; position: relative; }
+.nonveg-dot::after { content: ''; display: block; width: 4px; height: 4px; background: var(--danger); border-radius: 50%; margin: 0 auto; }
+
+/* ---- Tables ---- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; background: var(--leaf-2); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: color-mix(in oklab, var(--leaf) 20%, transparent); }
+
+/* ---- Filters ---- */
+.filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; background: var(--surface); padding: 12px; border: 1px solid var(--border); border-radius: var(--radius); }
+.filter-bar input, .filter-bar select { max-width: 240px; }
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-wrap input { padding-left: 34px; max-width: none; }
+.search-wrap::before { content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 13px; opacity: .6; }
+
+/* ---- Form ---- */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+.form-grid .full { grid-column: 1 / -1; }
+.upload-zone {
+  border: 2px dashed var(--border); border-radius: 12px; padding: 24px; text-align: center;
+  background: var(--leaf-2); color: var(--forest); cursor: pointer; transition: border-color .2s;
+}
+.upload-zone:hover { border-color: var(--moss); }
+.thumb-strip { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.thumb { width: 70px; height: 70px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); position: relative; }
+.thumb-wrap { position: relative; }
+.thumb-remove {
+  position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--danger); color: #fff; font-size: 12px; display: grid; place-items: center;
+}
+
+/* ---- Modal ---- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15,30,20,.55); backdrop-filter: blur(4px);
+  display: grid; place-items: center; z-index: 100; padding: 20px; animation: fade .2s;
+}
+.modal {
+  background: var(--surface); border-radius: 18px; max-width: 720px; width: 100%;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 30px 80px -20px rgba(0,0,0,.4);
+  animation: pop .25s;
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.modal-head h3 { font-size: 20px; }
+.modal-body { padding: 24px; }
+.modal-foot { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; background: var(--surface); }
+
+/* ---- Progress tracker ---- */
+.tracker { display: flex; align-items: center; justify-content: space-between; margin: 20px 0; gap: 4px; }
+.tracker .step { flex: 1; text-align: center; position: relative; }
+.tracker .dot {
+  width: 34px; height: 34px; border-radius: 50%; margin: 0 auto 6px;
+  background: var(--border); color: var(--muted); display: grid; place-items: center; font-weight: 700; font-size: 13px;
+  transition: all .3s;
+}
+.tracker .step.done .dot { background: linear-gradient(135deg, var(--forest), var(--moss)); color: #fff; }
+.tracker .step.current .dot { background: var(--amber); color: #fff; box-shadow: 0 0 0 4px var(--amber-bg); }
+.tracker .step .lbl { font-size: 11px; color: var(--muted); }
+.tracker .step.done .lbl, .tracker .step.current .lbl { color: var(--text); font-weight: 600; }
+.tracker .step:not(:last-child)::after {
+  content: ''; position: absolute; top: 17px; left: 60%; right: -40%; height: 2px; background: var(--border);
+}
+.tracker .step.done:not(:last-child)::after { background: var(--moss); }
+
+/* ---- Notifications ---- */
+.notif-panel {
+  position: absolute; right: 20px; top: 60px; width: 340px; max-height: 400px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow); z-index: 20;
+}
+.notif-item { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.notif-item:last-child { border-bottom: none; }
+.notif-item .t { font-weight: 600; margin-bottom: 2px; }
+.notif-item .d { color: var(--muted); font-size: 12px; }
+.notif-empty { padding: 30px; text-align: center; color: var(--muted); font-size: 14px; }
+
+/* ---- Toast ---- */
+.toast-wrap { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--moss);
+  padding: 12px 18px; border-radius: 10px; box-shadow: var(--shadow); font-size: 14px;
+  min-width: 240px; animation: slidein .25s;
+}
+.toast.err { border-left-color: var(--danger); }
+@keyframes slidein { from { opacity: 0; transform: translateX(20px); } }
+
+/* ---- Chart ---- */
+.chart-card { padding: 20px; }
+canvas { width: 100% !important; height: 240px !important; display: block; }
+
+/* ---- Detail ---- */
+.detail-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 720px) { .detail-hero { grid-template-columns: 1fr; } }
+.detail-hero img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 12px; }
+.detail-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.fact { padding: 10px; background: var(--leaf-2); border-radius: 10px; }
+.fact .k { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+.fact .v { font-weight: 600; margin-top: 2px; font-size: 14px; }
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  .sidebar { position: fixed; z-index: 30; transform: translateX(-100%); box-shadow: var(--shadow); }
+  .sidebar.open { transform: translateX(0); }
+  .menu-btn { display: grid; }
+  .topbar-search input { min-width: 160px; }
+  .nav-links { display: none; }
+}
+@media (max-width: 500px) {
+  .topbar-search { display: none; }
+  .content { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================== LANDING PAGE ================== -->
+<div id="landing">
+  <nav class="landing-nav">
+    <div class="nav-inner">
+      <div class="brand"><span class="brand-mark">🍃</span> PlateForward</div>
+      <div class="nav-links">
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="#impact">Impact</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn">🌙</button>
+        <button class="btn btn-primary" onclick="scrollToRoles()">Try Demo</button>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <span class="eyebrow">🌱 Reducing food waste, feeding communities</span>
+      <h1>Turn surplus food into <span>shared meals</span></h1>
+      <p>PlateForward connects restaurants, NGOs, and volunteers to redirect quality surplus food to people who need it — in real time.</p>
+      <div class="hero-cta">
+        <button class="btn btn-primary" onclick="scrollToRoles()">Explore Dashboards</button>
+        <button class="btn btn-outline" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">Learn More</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="roles">
+    <div class="section-head">
+      <span class="eyebrow">Demo Mode</span>
+      <h2>Pick a role to explore</h2>
+      <p>No sign-up, no OTP — click a card and step straight into a fully-working dashboard with sample data.</p>
+    </div>
+    <div class="role-grid">
+      <div class="role-card" onclick="enterApp('donor')">
+        <div class="role-icon">🍽️</div>
+        <h3>Donor Dashboard</h3>
+        <p>Restaurants & hotels post surplus food, upload photos, and track pickups.</p>
+        <div class="arrow">Enter as Donor →</div>
+      </div>
+      <div class="role-card" onclick="enterApp('ngo')">
+        <div class="role-icon">🏛️</div>
+        <h3>NGO Dashboard</h3>
+        <p>Browse available donations, accept requests, and assign volunteers.</p>
+        <div class="arrow">Enter as NGO →</div>
+      </div>
+      <div class="role-card" onclick="enterApp('volunteer')">
+        <div class="role-icon">🚴</div>
+        <h3>Volunteer Dashboard</h3>
+        <p>See assigned pickups, update status, and confirm safe delivery.</p>
+        <div class="arrow">Enter as Volunteer →</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="section-head">
+      <span class="eyebrow">About</span>
+      <h2>A better home for good food</h2>
+      <p>One-third of the food produced globally is wasted while millions go hungry. PlateForward closes that gap by making surplus donation as easy as ordering a meal — restaurants list, NGOs accept, volunteers deliver.</p>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="section-head">
+      <span class="eyebrow">Features</span>
+      <h2>Everything you need to redistribute food</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature"><div class="feature-icon">📸</div><h4>Rich Listings</h4><p>Photos, quantity, expiry time, and pickup details.</p></div>
+      <div class="feature"><div class="feature-icon">📍</div><h4>Pickup Routing</h4><p>Google Maps links for one-tap navigation.</p></div>
+      <div class="feature"><div class="feature-icon">🔔</div><h4>Live Notifications</h4><p>Instant updates for each status change.</p></div>
+      <div class="feature"><div class="feature-icon">📊</div><h4>Impact Analytics</h4><p>Meals served, active donations, completion trends.</p></div>
+      <div class="feature"><div class="feature-icon">🤝</div><h4>NGO Directory</h4><p>See connections between restaurants and NGOs.</p></div>
+      <div class="feature"><div class="feature-icon">🌙</div><h4>Light & Dark Mode</h4><p>Comfortable to use morning, noon, or night.</p></div>
+    </div>
+  </section>
+
+  <section class="stats" id="impact">
+    <div class="stats-grid">
+      <div><div class="stat-value" data-count="12500">0</div><div class="stat-label">Meals redirected</div></div>
+      <div><div class="stat-value" data-count="240">0</div><div class="stat-label">Partner restaurants</div></div>
+      <div><div class="stat-value" data-count="86">0</div><div class="stat-label">NGO partners</div></div>
+      <div><div class="stat-value" data-count="1400">0</div><div class="stat-label">Active volunteers</div></div>
+    </div>
+  </section>
+
+  <section class="section" id="contact">
+    <div class="section-head">
+      <span class="eyebrow">Contact</span>
+      <h2>Let's talk</h2>
+      <p>Have a partnership idea or want to bring PlateForward to your city?</p>
+    </div>
+    <div class="contact-grid">
+      <div class="contact-card">
+        <div class="contact-item"><div class="ic">📧</div><div><strong>Email</strong><span>hello@plateforward.demo</span></div></div>
+        <div class="contact-item"><div class="ic">📞</div><div><strong>Phone</strong><span>+91 98765 43210</span></div></div>
+        <div class="contact-item"><div class="ic">📍</div><div><strong>Address</strong><span>Bengaluru, Karnataka, India</span></div></div>
+      </div>
+      <form class="contact-card" onsubmit="event.preventDefault(); toast('Message sent — we\'ll reply soon.'); this.reset();">
+        <div style="margin-bottom:14px;"><label>Name</label><input required placeholder="Your name" /></div>
+        <div style="margin-bottom:14px;"><label>Email</label><input type="email" required placeholder="you@email.com" /></div>
+        <div style="margin-bottom:14px;"><label>Message</label><textarea rows="4" required placeholder="How can we help?"></textarea></div>
+        <button class="btn btn-primary" type="submit">Send message</button>
+      </form>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="brand" style="justify-content:center; margin-bottom:12px;"><span class="brand-mark">🍃</span> PlateForward</div>
+    <p>© 2026 PlateForward · Demo project · Built with ❤️ for a hunger-free tomorrow.</p>
+  </footer>
+</div>
+
+<!-- ================== APP SHELL ================== -->
+<div id="app" class="app hidden">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="brand-mark">🍃</span> PlateForward</div>
+    <nav class="side-nav" id="sideNav"></nav>
+    <div class="sidebar-footer">
+      <button class="btn btn-ghost" style="width:100%; justify-content:flex-start;" onclick="exitApp()">← Exit demo</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="demo-banner">🚀 Demo Mode — data is stored locally in your browser. Switch roles anytime from the sidebar.</div>
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn icon-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+        <div class="topbar-search"><input id="globalSearch" placeholder="Search donations, NGOs..." oninput="handleGlobalSearch(this.value)" /></div>
+      </div>
+      <div class="topbar-right" style="position:relative;">
+        <button class="icon-btn" onclick="toggleTheme()" id="themeBtn2">🌙</button>
+        <button class="icon-btn" onclick="toggleNotifs()" id="notifBtn">🔔<span class="notif-dot" id="notifDot"></span></button>
+        <div class="avatar" id="userAvatar">D</div>
+      </div>
+    </header>
+    <main class="content" id="pageContent"></main>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+<div id="modalRoot"></div>
+
+<script>
+/* ==========================================================
+   PlateForward — App Logic
+   ========================================================== */
+
+// ---------- Storage ----------
+const LS_KEY = 'plateforward.data.v1';
+const state = {
+  role: null,
+  restaurants: [],
+  ngos: [],
+  volunteers: [],
+  donations: [],
+  notifications: [],
+  editing: null,
+  search: '',
+};
+
+const STATUSES = ['pending', 'accepted', 'assigned', 'collected', 'delivered'];
+const STATUS_LABEL = { pending:'Pending', accepted:'Accepted', assigned:'Assigned', collected:'Collected', delivered:'Delivered', rejected:'Rejected' };
+
+// ---------- Seed data ----------
+function seedData() {
+  const restaurants = [
+    { id: 'r1', name: 'Fresh Bites', phone: '+91 98111 11111', address: '12 MG Road, Bengaluru' },
+    { id: 'r2', name: 'Green Leaf Hotel', phone: '+91 98222 22222', address: '45 Brigade Road, Bengaluru' },
+    { id: 'r3', name: 'Spice Garden', phone: '+91 98333 33333', address: '7 Church Street, Bengaluru' },
+    { id: 'r4', name: 'Food Corner', phone: '+91 98444 44444', address: '88 Koramangala, Bengaluru' },
+    { id: 'r5', name: 'City Bakery', phone: '+91 98555 55555', address: '22 Indiranagar, Bengaluru' },
+  ];
+  const ngos = [
+    { id: 'n1', name: 'Hope Foundation', area: 'Central Bengaluru', phone: '+91 90111 11111' },
+    { id: 'n2', name: 'Helping Hands', area: 'South Bengaluru', phone: '+91 90222 22222' },
+    { id: 'n3', name: 'Smile Trust', area: 'East Bengaluru', phone: '+91 90333 33333' },
+    { id: 'n4', name: 'Food Care NGO', area: 'North Bengaluru', phone: '+91 90444 44444' },
+  ];
+  const volunteers = [
+    { id: 'v1', name: 'Rahul Mehra', phone: '+91 80111 11111', vehicle: 'Bike' },
+    { id: 'v2', name: 'Priya Sharma', phone: '+91 80222 22222', vehicle: 'Scooter' },
+    { id: 'v3', name: 'Arjun Kapoor', phone: '+91 80333 33333', vehicle: 'Bike' },
+    { id: 'v4', name: 'Sneha Iyer', phone: '+91 80444 44444', vehicle: 'Car' },
+  ];
+  const img = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=70`;
+  const now = Date.now();
+  const donations = [
+    { id: 'd1', restaurantId:'r1', restaurantName:'Fresh Bites', foodName:'Veg Biryani & Raita', category:'Cooked Meals', type:'veg', quantity:40, servings:40, pickupAddress:'12 MG Road, Bengaluru', pickupTime:new Date(now+2*3600e3).toISOString(), expiresAt:new Date(now+5*3600e3).toISOString(), mapsLink:'https://maps.google.com', phone:'+91 98111 11111', notes:'Freshly cooked, packed in foil boxes', images:[img('1546069901-ba9599a7e63c')], status:'delivered', ngoId:'n1', ngoName:'Hope Foundation', volunteerId:'v1', volunteerName:'Rahul Mehra', createdAt:new Date(now-2*86400e3).toISOString() },
+    { id: 'd2', restaurantId:'r2', restaurantName:'Green Leaf Hotel', foodName:'Paneer Curry, Roti', category:'Cooked Meals', type:'veg', quantity:25, servings:25, pickupAddress:'45 Brigade Road, Bengaluru', pickupTime:new Date(now+1*3600e3).toISOString(), expiresAt:new Date(now+4*3600e3).toISOString(), mapsLink:'https://maps.google.com', phone:'+91 98222 22222', notes:'Vegetarian, dairy present', images:[img('1567620905732-2d1ec7ab7445')], status:'assigned', ngoId:'n2', ngoName:'Helping Hands', volunteerId:'v2', volunteerName:'Priya Sharma', createdAt:new Date(now-3*3600e3).toISOString() },
+    { id: 'd3', restaurantId:'r3', restaurantName:'Spice Garden', foodName:'Chicken Biryani', category:'Cooked Meals', type:'nonveg', quantity:30, servings:30, pickupAddress:'7 Church Street, Bengaluru', pickupTime:new Date(now+1.5*3600e3).toISOString(), expiresAt:new Date(now+4*3600e3).toISOString(), mapsLink:'https://maps.google.com', phone:'+91 98333 33333', notes:'Contains chicken', images:[img('1563379091339-03b21ab4a4f8')], status:'accepted', ngoId:'n3', ngoName:'Smile Trust', createdAt:new Date(now-2*3600e3).toISOString() },
+    { id: 'd4', restaurantId:'r4', restaurantName:'Food Corner', foodName:'Assorted Sandwiches', category:'Snacks', type:'veg', quantity:50, servings:25, pickupAddress:'88 Koramangala, Bengaluru', pickupTime:new Date(now+3*3600e3).toISOString(), expiresAt:new Date(now+6*3600e3).toISOString(), mapsLink:'https://maps.google.com', phone:'+91 98444 44444', notes:'Individually wrapped', images:[img('1528735602780-2552fd46c7af')], status:'pending', createdAt:new Date(now-1*3600e3).toISOString() },
+    { id: 'd5', restaurantId:'r5', restaurantName:'City Bakery', foodName:'Fresh Bread & Pastries', category:'Bakery', type:'veg', quantity:60, servings:30, pickupAddress:'22 Indiranagar, Bengaluru', pickupTime:new Date(now+2*3600e3).toISOString(), expiresAt:new Date(now+8*3600e3).toISOString(), mapsLink:'https://maps.google.com', phone:'+91 98555 55555', notes:'End-of-day surplus', images:[img('1509440159596-0249088772ff')], status:'pending', createdAt:new Date(now-30*60e3).toISOString() },
+    { id: 'd6', restaurantId:'r1', restaurantName:'Fresh Bites', foodName:'Vegetable Pulao', category:'Cooked Meals', type:'veg', quantity:35, servings:35, pickupAddress:'12 MG Road, Bengaluru', pickupTime:new Date(now-2*3600e3).toISOString(), expiresAt:new Date(now+1*3600e3).toISOString(), mapsLink:'https://maps.google.com', phone:'+91 98111 11111', notes:'Rice-based, allergen free', images:[img('1512058564366-18510be2db19')], status:'collected', ngoId:'n1', ngoName:'Hope Foundation', volunteerId:'v3', volunteerName:'Arjun Kapoor', createdAt:new Date(now-5*3600e3).toISOString() },
+  ];
+  const notifications = [
+    { id:'nt1', title:'New donation posted', desc:'City Bakery listed fresh bread & pastries.', ts: Date.now()-10*60e3 },
+    { id:'nt2', title:'Assignment received', desc:'Priya has been assigned to Green Leaf pickup.', ts: Date.now()-45*60e3 },
+    { id:'nt3', title:'Delivery completed', desc:'Rahul delivered 40 meals from Fresh Bites.', ts: Date.now()-2*3600e3 },
+  ];
+  return { restaurants, ngos, volunteers, donations, notifications };
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      Object.assign(state, parsed);
+      return;
+    }
+  } catch(e){}
+  Object.assign(state, seedData());
+  save();
+}
+function save() {
+  const { restaurants, ngos, volunteers, donations, notifications } = state;
+  localStorage.setItem(LS_KEY, JSON.stringify({ restaurants, ngos, volunteers, donations, notifications }));
+}
+
+// ---------- Utilities ----------
+const uid = () => 'x' + Math.random().toString(36).slice(2, 10);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function fmtDT(iso) { if(!iso) return '—'; const d=new Date(iso); return d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}); }
+function timeUntil(iso) {
+  if (!iso) return '—';
+  const diff = new Date(iso).getTime() - Date.now();
+  const abs = Math.abs(diff); const h = Math.floor(abs/3600e3); const m = Math.floor((abs%3600e3)/60e3);
+  const s = h ? `${h}h ${m}m` : `${m}m`;
+  return diff > 0 ? `in ${s}` : `${s} ago`;
+}
+function toast(msg, type) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type === 'err' ? ' err' : '');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; el.style.transition = '.25s'; }, 2400);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ---------- Theme ----------
+function toggleTheme() {
+  const cur = document.documentElement.dataset.theme === 'dark' ? '' : 'dark';
+  document.documentElement.dataset.theme = cur;
+  localStorage.setItem('pf.theme', cur);
+  document.querySelectorAll('#themeBtn, #themeBtn2').forEach(b => b.textContent = cur === 'dark' ? '☀️' : '🌙');
+}
+(function initTheme(){
+  const t = localStorage.getItem('pf.theme');
+  if (t === 'dark') { document.documentElement.dataset.theme = 'dark'; }
+})();
+
+// ---------- Landing ----------
+function scrollToRoles() { document.getElementById('roles').scrollIntoView({behavior:'smooth'}); }
+function animateCounters() {
+  document.querySelectorAll('[data-count]').forEach(el => {
+    const target = +el.dataset.count; const dur = 1400; const start = performance.now();
+    function tick(t) {
+      const p = Math.min((t-start)/dur, 1);
+      el.textContent = Math.floor(target * (0.2 + 0.8*p*(2-p))).toLocaleString();
+      if (p < 1) requestAnimationFrame(tick);
+      else el.textContent = target.toLocaleString();
+    }
+    requestAnimationFrame(tick);
+  });
+}
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { animateCounters(); observer.disconnect(); } });
+}, { threshold: 0.3 });
+setTimeout(() => { const s = document.querySelector('.stats'); if (s) observer.observe(s); }, 100);
+
+// ---------- App ----------
+function enterApp(role) {
+  state.role = role;
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  const avatar = document.getElementById('userAvatar');
+  avatar.textContent = role[0].toUpperCase();
+  renderSidebar();
+  navigate('dashboard');
+  updateNotifDot();
+  window.scrollTo(0, 0);
+}
+function exitApp() {
+  state.role = null;
+  document.getElementById('landing').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  window.scrollTo(0, 0);
+}
+
+const NAV_BY_ROLE = {
+  donor: [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'donations', label: 'My Donations', icon: '🍱' },
+    { id: 'new-donation', label: 'New Donation', icon: '➕' },
+    { id: 'gallery', label: 'Food Gallery', icon: '🖼️' },
+    { id: 'connections', label: 'Connections', icon: '🤝' },
+  ],
+  ngo: [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'donations', label: 'Available Food', icon: '🍱' },
+    { id: 'gallery', label: 'Food Gallery', icon: '🖼️' },
+    { id: 'volunteers', label: 'Volunteers', icon: '🚴' },
+    { id: 'connections', label: 'Connections', icon: '🤝' },
+  ],
+  volunteer: [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'donations', label: 'My Pickups', icon: '📦' },
+    { id: 'gallery', label: 'Food Gallery', icon: '🖼️' },
+  ],
+};
+
+function renderSidebar() {
+  const nav = document.getElementById('sideNav');
+  const items = NAV_BY_ROLE[state.role] || [];
+  const switcher = `<div style="padding:10px 12px; font-size:11px; text-transform:uppercase; color:var(--muted); letter-spacing:.06em;">Switch role</div>`;
+  const roleBtns = ['donor','ngo','volunteer'].map(r =>
+    `<button onclick="enterApp('${r}')" class="${state.role===r?'active':''}">
+       <span class="ic">${r==='donor'?'🍽️':r==='ngo'?'🏛️':'🚴'}</span> ${r[0].toUpperCase()+r.slice(1)}
+     </button>`
+  ).join('');
+  nav.innerHTML = items.map(i =>
+    `<button data-page="${i.id}" onclick="navigate('${i.id}')"><span class="ic">${i.icon}</span> ${i.label}</button>`
+  ).join('') + `<div style="height:16px;"></div>` + switcher + roleBtns;
+}
+
+let currentPage = 'dashboard';
+function navigate(page) {
+  currentPage = page;
+  document.querySelectorAll('#sideNav button[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.getElementById('sidebar').classList.remove('open');
+  const el = document.getElementById('pageContent');
+  el.innerHTML = '';
+  switch (page) {
+    case 'dashboard': renderDashboard(el); break;
+    case 'donations': renderDonationsPage(el); break;
+    case 'new-donation': renderDonationForm(el); break;
+    case 'gallery': renderGallery(el); break;
+    case 'volunteers': renderVolunteers(el); break;
+    case 'connections': renderConnections(el); break;
+    case 'detail': /* handled by openDetail */ break;
+  }
+}
+
+// ---------- Dashboard ----------
+function renderDashboard(root) {
+  const role = state.role;
+  let stats, chartData, recent;
+  if (role === 'donor') {
+    const mine = state.donations; // demo: all rows
+    const active = mine.filter(d => !['delivered','rejected'].includes(d.status)).length;
+    const completed = mine.filter(d => d.status === 'delivered').length;
+    const meals = mine.filter(d => d.status === 'delivered').reduce((s,d) => s + (d.servings||0), 0);
+    stats = [
+      { icon:'🍱', label:'Total donations', val: mine.length, tone:'forest' },
+      { icon:'⏱️', label:'Active', val: active, tone:'amber', hint:'In progress' },
+      { icon:'✅', label:'Completed', val: completed, tone:'leaf' },
+      { icon:'❤️', label:'Meals served', val: meals, tone:'moss', hint:'Lifetime impact' },
+    ];
+    recent = mine.slice(0, 6);
+    chartData = buildStatusChart(mine);
+  } else if (role === 'ngo') {
+    const available = state.donations.filter(d => d.status === 'pending').length;
+    const accepted = state.donations.filter(d => d.ngoId).length;
+    const completed = state.donations.filter(d => d.status === 'delivered').length;
+    stats = [
+      { icon:'🍱', label:'Available now', val: available, tone:'amber' },
+      { icon:'⏱️', label:'Accepted', val: accepted, tone:'moss' },
+      { icon:'✅', label:'Completed', val: completed, tone:'leaf' },
+      { icon:'🏢', label:'Restaurants', val: state.restaurants.length, tone:'forest', hint:'Partners' },
+    ];
+    recent = state.donations.filter(d => d.status === 'pending').slice(0, 6);
+    chartData = buildStatusChart(state.donations);
+  } else {
+    const mine = state.donations.filter(d => d.volunteerId);
+    const active = mine.filter(d => !['delivered'].includes(d.status)).length;
+    const completed = mine.filter(d => d.status === 'delivered').length;
+    stats = [
+      { icon:'📦', label:'Active pickups', val: active, tone:'amber' },
+      { icon:'✅', label:'Completed', val: completed, tone:'leaf' },
+      { icon:'🚴', label:'Total pickups', val: mine.length, tone:'moss', hint:'Assigned to you' },
+    ];
+    recent = mine.slice(0, 6);
+    chartData = buildStatusChart(mine);
+  }
+
+  root.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>${role[0].toUpperCase()+role.slice(1)} Dashboard</h1>
+        <p>${role === 'donor' ? 'Track your impact and post new donations.' : role === 'ngo' ? 'Available food ready to accept.' : 'Your assigned pickups and deliveries.'}</p>
+      </div>
+      ${role==='donor' ? `<button class="btn btn-primary" onclick="navigate('new-donation')">➕ New donation</button>` : ''}
+    </div>
+    <div class="stats-row">
+      ${stats.map(s => `
+        <div class="stat-card">
+          <div>
+            <div class="label">${s.label}</div>
+            <div class="val">${s.val}</div>
+            ${s.hint ? `<div class="hint">${s.hint}</div>` : ''}
+          </div>
+          <div class="ic-box tone-${s.tone}">${s.icon}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="grid-2">
+      <div class="card chart-card">
+        <h3>Status Overview</h3>
+        <canvas id="statusChart"></canvas>
+      </div>
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h3 style="margin:0;">Recent Activity</h3>
+          <button class="btn btn-sm btn-ghost" onclick="navigate('donations')">View all →</button>
+        </div>
+        ${recent.length ? recent.map(d => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border); cursor:pointer;" onclick="openDetail('${d.id}')">
+            <div style="min-width:0;">
+              <div style="font-weight:600;">${esc(d.foodName)}</div>
+              <div style="font-size:12px; color:var(--muted);">${esc(d.restaurantName)} · ${d.servings || 0} servings</div>
+            </div>
+            <span class="badge badge-${d.status}">${STATUS_LABEL[d.status]}</span>
+          </div>
+        `).join('') : `<p style="color:var(--muted); text-align:center; padding:20px;">No recent activity.</p>`}
+      </div>
+    </div>
+  `;
+  drawBarChart(document.getElementById('statusChart'), chartData);
+}
+
+function buildStatusChart(rows) {
+  const counts = { pending:0, accepted:0, assigned:0, collected:0, delivered:0 };
+  rows.forEach(r => { if (counts[r.status] != null) counts[r.status]++; });
+  return { labels: Object.keys(counts).map(k => STATUS_LABEL[k]), values: Object.values(counts) };
+}
+
+// ---------- Canvas chart ----------
+function drawBarChart(canvas, data) {
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth; const h = canvas.clientHeight;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr); ctx.clearRect(0,0,w,h);
+  const pad = { l: 34, r: 12, t: 14, b: 34 };
+  const cw = w - pad.l - pad.r; const ch = h - pad.t - pad.b;
+  const max = Math.max(1, ...data.values);
+  const barW = cw / data.values.length * 0.6; const gap = cw / data.values.length * 0.4;
+  const cs = getComputedStyle(document.documentElement);
+  const forest = cs.getPropertyValue('--forest').trim() || '#14532d';
+  const moss = cs.getPropertyValue('--moss').trim() || '#4d7c0f';
+  const muted = cs.getPropertyValue('--muted').trim() || '#5b6b60';
+  const border = cs.getPropertyValue('--border').trim() || '#e2e8dc';
+  // gridlines
+  ctx.strokeStyle = border; ctx.lineWidth = 1; ctx.font = '11px Figtree'; ctx.fillStyle = muted;
+  for (let i=0;i<=4;i++){ const y = pad.t + ch - (ch*i/4); ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke(); ctx.fillText(String(Math.round(max*i/4)), 4, y+3); }
+  // bars
+  data.values.forEach((v,i) => {
+    const x = pad.l + i * (barW+gap) + gap/2;
+    const bh = (v/max) * ch;
+    const y = pad.t + ch - bh;
+    const grad = ctx.createLinearGradient(0, y, 0, y+bh); grad.addColorStop(0, moss); grad.addColorStop(1, forest);
+    ctx.fillStyle = grad;
+    const r = 6;
+    ctx.beginPath();
+    ctx.moveTo(x, y+r); ctx.arcTo(x, y, x+r, y, r); ctx.lineTo(x+barW-r, y); ctx.arcTo(x+barW, y, x+barW, y+r, r);
+    ctx.lineTo(x+barW, y+bh); ctx.lineTo(x, y+bh); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = muted; ctx.textAlign='center';
+    ctx.fillText(data.labels[i], x+barW/2, pad.t+ch+16);
+    ctx.textAlign='left';
+  });
+}
+window.addEventListener('resize', () => { if (currentPage === 'dashboard') navigate('dashboard'); });
+
+// ---------- Donations list ----------
+function renderDonationsPage(root) {
+  const role = state.role;
+  let rows = state.donations.slice();
+  if (role === 'ngo') rows = rows; // NGO sees all + can accept pending
+  if (role === 'volunteer') rows = rows.filter(d => d.volunteerId);
+  root.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>${role==='donor'?'My Donations':role==='ngo'?'Available Food':'My Pickups'}</h1>
+        <p id="countText"></p>
+      </div>
+      ${role==='donor' ? `<button class="btn btn-primary" onclick="navigate('new-donation')">➕ New donation</button>` : ''}
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap"><input id="searchInput" placeholder="Search by food or restaurant..." /></div>
+      <select id="statusFilter">
+        <option value="all">All statuses</option>
+        ${Object.entries(STATUS_LABEL).map(([k,v]) => `<option value="${k}">${v}</option>`).join('')}
+      </select>
+      <select id="typeFilter">
+        <option value="all">Veg & Non-Veg</option>
+        <option value="veg">Veg only</option>
+        <option value="nonveg">Non-Veg only</option>
+      </select>
+    </div>
+    <div id="donationList"></div>
+  `;
+  const searchEl = document.getElementById('searchInput');
+  const statusEl = document.getElementById('statusFilter');
+  const typeEl = document.getElementById('typeFilter');
+  function apply() {
+    const q = searchEl.value.trim().toLowerCase();
+    const sf = statusEl.value; const tf = typeEl.value;
+    let list = rows.filter(d => {
+      if (sf !== 'all' && d.status !== sf) return false;
+      if (tf !== 'all' && d.type !== tf) return false;
+      if (q && !(`${d.foodName} ${d.restaurantName} ${d.pickupAddress}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+    document.getElementById('countText').textContent = `${list.length} ${list.length===1?'donation':'donations'}`;
+    document.getElementById('donationList').innerHTML = list.length ? `
+      <div class="donation-grid">
+        ${list.map(d => donationCardHTML(d)).join('')}
+      </div>
+    ` : `<div class="card" style="text-align:center; padding:40px; color:var(--muted);">No donations match your filters.</div>`;
+  }
+  searchEl.addEventListener('input', apply);
+  statusEl.addEventListener('change', apply);
+  typeEl.addEventListener('change', apply);
+  apply();
+}
+
+function donationCardHTML(d) {
+  return `
+    <div class="donation-card" onclick="openDetail('${d.id}')">
+      <div class="donation-img">
+        ${d.images && d.images[0] ? `<img src="${esc(d.images[0])}" alt="${esc(d.foodName)}" />` : ''}
+        <span class="badge badge-${d.status}">${STATUS_LABEL[d.status]}</span>
+      </div>
+      <div class="donation-body">
+        <div style="display:flex; justify-content:space-between; gap:8px;">
+          <h4>${esc(d.foodName)}</h4>
+          <span title="${d.type==='veg'?'Vegetarian':'Non-Vegetarian'}" class="${d.type==='veg'?'veg-dot':'nonveg-dot'}"></span>
+        </div>
+        <div style="font-size:13px; color:var(--muted); margin-top:2px;">${esc(d.restaurantName)}</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:4px;">📍 ${esc(d.pickupAddress)}</div>
+        <div class="donation-meta">
+          <span>${d.servings || 0} servings</span>
+          <span>Expires ${timeUntil(d.expiresAt)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ---------- Donation form ----------
+function renderDonationForm(root, editing) {
+  const d = editing || {};
+  root.innerHTML = `
+    <div class="page-head"><div><h1>${editing?'Edit':'New'} Donation</h1><p>Share surplus food with local NGOs.</p></div></div>
+    <div class="card">
+      <form id="donationForm">
+        <label>Food images</label>
+        <div class="upload-zone" onclick="document.getElementById('imgInput').click()">
+          📷 Click to upload one or more photos (JPG, PNG)
+        </div>
+        <input type="file" id="imgInput" accept="image/*" multiple hidden />
+        <div class="thumb-strip" id="thumbStrip"></div>
+
+        <div class="form-grid" style="margin-top:20px;">
+          <div><label>Restaurant Name *</label><input name="restaurantName" required value="${esc(d.restaurantName||'')}" /></div>
+          <div><label>Food Name *</label><input name="foodName" required value="${esc(d.foodName||'')}" /></div>
+          <div>
+            <label>Food Category *</label>
+            <select name="category" required>
+              ${['Cooked Meals','Bakery','Snacks','Fruits & Vegetables','Packaged Food','Beverages'].map(c => `<option ${d.category===c?'selected':''}>${c}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label>Type *</label>
+            <select name="type" required>
+              <option value="veg" ${d.type==='veg'?'selected':''}>🟢 Vegetarian</option>
+              <option value="nonveg" ${d.type==='nonveg'?'selected':''}>🔴 Non-Vegetarian</option>
+            </select>
+          </div>
+          <div><label>Quantity (items/plates) *</label><input name="quantity" type="number" min="1" required value="${d.quantity||''}" /></div>
+          <div><label>Estimated servings *</label><input name="servings" type="number" min="1" required value="${d.servings||''}" /></div>
+          <div class="full"><label>Pickup Address *</label><input name="pickupAddress" required value="${esc(d.pickupAddress||'')}" /></div>
+          <div><label>Pickup Time *</label><input name="pickupTime" type="datetime-local" required value="${d.pickupTime?toLocal(d.pickupTime):''}" /></div>
+          <div><label>Expires At *</label><input name="expiresAt" type="datetime-local" required value="${d.expiresAt?toLocal(d.expiresAt):''}" /></div>
+          <div><label>Google Maps Link</label><input name="mapsLink" placeholder="https://maps.google.com/..." value="${esc(d.mapsLink||'')}" /></div>
+          <div><label>Contact Number *</label><input name="phone" required value="${esc(d.phone||'')}" /></div>
+          <div class="full"><label>Notes</label><textarea name="notes" rows="3" placeholder="Allergens, packaging, special instructions...">${esc(d.notes||'')}</textarea></div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+          <button type="button" class="btn btn-outline" onclick="navigate('donations')">Cancel</button>
+          <button type="submit" class="btn btn-primary">${editing?'Save changes':'Post donation'}</button>
+        </div>
+      </form>
+    </div>
+  `;
+  const images = editing ? [...(editing.images||[])] : [];
+  function renderThumbs() {
+    document.getElementById('thumbStrip').innerHTML = images.map((src,i) => `
+      <div class="thumb-wrap"><img class="thumb" src="${esc(src)}"/><button type="button" class="thumb-remove" onclick="__rmThumb(${i})">✕</button></div>
+    `).join('');
+  }
+  window.__rmThumb = (i) => { images.splice(i,1); renderThumbs(); };
+  document.getElementById('imgInput').addEventListener('change', (e) => {
+    const files = [...e.target.files];
+    files.forEach(f => { const r = new FileReader(); r.onload = () => { images.push(r.result); renderThumbs(); }; r.readAsDataURL(f); });
+  });
+  renderThumbs();
+
+  document.getElementById('donationForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = e.target; const g = (n) => f.elements[n].value;
+    const payload = {
+      restaurantName: g('restaurantName'), foodName: g('foodName'), category: g('category'), type: g('type'),
+      quantity: +g('quantity'), servings: +g('servings'), pickupAddress: g('pickupAddress'),
+      pickupTime: new Date(g('pickupTime')).toISOString(),
+      expiresAt: new Date(g('expiresAt')).toISOString(),
+      mapsLink: g('mapsLink'), phone: g('phone'), notes: g('notes'), images: images.length ? images : [defaultFoodImg()],
+    };
+    if (editing) {
+      Object.assign(editing, payload);
+      toast('Donation updated');
+    } else {
+      const rec = { id: uid(), status:'pending', createdAt: new Date().toISOString(), ...payload };
+      state.donations.unshift(rec);
+      pushNotif('New donation posted', `${rec.restaurantName} listed ${rec.foodName}.`);
+      toast('Donation posted');
+    }
+    save();
+    navigate('donations');
+  });
+}
+function toLocal(iso) { const d = new Date(iso); const off = d.getTimezoneOffset(); const l = new Date(d.getTime() - off*60000); return l.toISOString().slice(0,16); }
+function defaultFoodImg() { return 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=70'; }
+
+// ---------- Detail modal ----------
+function openDetail(id) {
+  const d = state.donations.find(x => x.id === id);
+  if (!d) return;
+  const stepIdx = STATUSES.indexOf(d.status);
+  const role = state.role;
+  const actions = [];
+  if (role === 'donor') {
+    if (['pending','accepted'].includes(d.status)) {
+      actions.push(`<button class="btn btn-outline" onclick="editDonation('${d.id}')">✏️ Edit</button>`);
+    }
+    actions.push(`<button class="btn btn-danger" onclick="deleteDonation('${d.id}')">🗑️ Delete</button>`);
+  }
+  if (role === 'ngo') {
+    if (d.status === 'pending') {
+      actions.push(`<button class="btn btn-primary" onclick="acceptDonation('${d.id}')">✅ Accept</button>`);
+      actions.push(`<button class="btn btn-outline" onclick="rejectDonation('${d.id}')">❌ Reject</button>`);
+    }
+    if (d.status === 'accepted') {
+      actions.push(`<button class="btn btn-primary" onclick="openAssignVolunteer('${d.id}')">🚴 Assign volunteer</button>`);
+    }
+  }
+  if (role === 'volunteer') {
+    if (d.status === 'assigned') actions.push(`<button class="btn btn-primary" onclick="markStatus('${d.id}','collected')">📦 Mark Collected</button>`);
+    if (d.status === 'collected') actions.push(`<button class="btn btn-primary" onclick="markStatus('${d.id}','delivered')">✅ Mark Delivered</button>`);
+    if (d.volunteerId && d.status === 'collected') {
+      actions.push(`<button class="btn btn-outline" onclick="document.getElementById('proofInput').click()">📷 Upload proof</button>`);
+    }
+  }
+  showModal(`
+    <div class="modal-head">
+      <div><h3>${esc(d.foodName)}</h3><div style="font-size:13px; color:var(--muted); margin-top:2px;">${esc(d.restaurantName)}</div></div>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-hero">
+        <img src="${esc((d.images && d.images[0]) || defaultFoodImg())}" alt="${esc(d.foodName)}" />
+        <div>
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+            <span class="badge badge-${d.status}">${STATUS_LABEL[d.status]}</span>
+            <span class="badge" style="background:var(--leaf-2); color:var(--forest);">${d.category}</span>
+            <span class="badge" style="background:${d.type==='veg'?'#dcfce7':'#fee2e2'}; color:${d.type==='veg'?'#166534':'#991b1b'};">${d.type==='veg'?'🟢 Veg':'🔴 Non-Veg'}</span>
+          </div>
+          <div class="detail-facts">
+            <div class="fact"><div class="k">Quantity</div><div class="v">${d.quantity}</div></div>
+            <div class="fact"><div class="k">Servings</div><div class="v">${d.servings}</div></div>
+            <div class="fact"><div class="k">Pickup</div><div class="v">${fmtDT(d.pickupTime)}</div></div>
+            <div class="fact"><div class="k">Expires</div><div class="v">${fmtDT(d.expiresAt)}</div></div>
+            <div class="fact" style="grid-column:1/-1;"><div class="k">Address</div><div class="v">${esc(d.pickupAddress)}</div></div>
+            <div class="fact"><div class="k">Contact</div><div class="v">${esc(d.phone)}</div></div>
+            <div class="fact"><div class="k">Maps</div><div class="v">${d.mapsLink?`<a href="${esc(d.mapsLink)}" target="_blank" style="color:var(--moss);">Open →</a>`:'—'}</div></div>
+            ${d.ngoName?`<div class="fact"><div class="k">NGO</div><div class="v">${esc(d.ngoName)}</div></div>`:''}
+            ${d.volunteerName?`<div class="fact"><div class="k">Volunteer</div><div class="v">${esc(d.volunteerName)}</div></div>`:''}
+          </div>
+        </div>
+      </div>
+      <h4 style="margin-top:22px; font-family:Outfit; font-weight:700;">Delivery progress</h4>
+      <div class="tracker">
+        ${STATUSES.map((s,i) => `
+          <div class="step ${i<stepIdx?'done':i===stepIdx?'current':''}">
+            <div class="dot">${i<stepIdx?'✓':i+1}</div>
+            <div class="lbl">${STATUS_LABEL[s]}</div>
+          </div>
+        `).join('')}
+      </div>
+      ${d.notes?`<div style="margin-top:18px;"><label>Notes</label><div style="padding:12px; background:var(--leaf-2); border-radius:10px; font-size:14px;">${esc(d.notes)}</div></div>`:''}
+      ${d.proof?`<div style="margin-top:18px;"><label>Delivery proof</label><img src="${esc(d.proof)}" style="width:100%; max-width:300px; border-radius:10px;" /></div>`:''}
+      <input type="file" id="proofInput" accept="image/*" hidden onchange="uploadProof('${d.id}', this)" />
+    </div>
+    <div class="modal-foot">${actions.join('')}</div>
+  `);
+}
+
+function editDonation(id) {
+  const d = state.donations.find(x=>x.id===id); if (!d) return;
+  closeModal(); currentPage = 'new-donation'; renderDonationForm(document.getElementById('pageContent'), d);
+}
+function deleteDonation(id) {
+  if (!confirm('Delete this donation? This cannot be undone.')) return;
+  state.donations = state.donations.filter(x=>x.id!==id);
+  save(); closeModal(); toast('Donation deleted'); navigate('donations');
+}
+function acceptDonation(id) {
+  const d = state.donations.find(x=>x.id===id); if (!d) return;
+  d.status = 'accepted'; d.ngoId = 'n1'; d.ngoName = 'Hope Foundation';
+  save(); pushNotif('Donation accepted', `${d.ngoName} accepted ${d.foodName}.`);
+  toast('Donation accepted'); closeModal(); navigate(currentPage);
+}
+function rejectDonation(id) {
+  const d = state.donations.find(x=>x.id===id); if (!d) return;
+  d.status = 'rejected'; save(); toast('Donation rejected', 'err'); closeModal(); navigate(currentPage);
+}
+function openAssignVolunteer(id) {
+  const opts = state.volunteers.map(v => `<option value="${v.id}">${esc(v.name)} — ${esc(v.vehicle)}</option>`).join('');
+  showModal(`
+    <div class="modal-head"><h3>Assign volunteer</h3><button class="icon-btn" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <label>Choose a volunteer</label>
+      <select id="volSelect">${opts}</select>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAssign('${id}')">Assign</button>
+    </div>
+  `);
+}
+function confirmAssign(id) {
+  const d = state.donations.find(x=>x.id===id); if (!d) return;
+  const vid = document.getElementById('volSelect').value;
+  const v = state.volunteers.find(x=>x.id===vid);
+  d.volunteerId = v.id; d.volunteerName = v.name; d.status = 'assigned';
+  save(); pushNotif('Volunteer assigned', `${v.name} → ${d.foodName}`); toast('Volunteer assigned');
+  closeModal(); navigate(currentPage);
+}
+function markStatus(id, s) {
+  const d = state.donations.find(x=>x.id===id); if (!d) return;
+  d.status = s; save(); pushNotif('Status updated', `${d.foodName} → ${STATUS_LABEL[s]}`);
+  toast(`Marked as ${STATUS_LABEL[s]}`); closeModal(); navigate(currentPage);
+}
+function uploadProof(id, input) {
+  const f = input.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    const d = state.donations.find(x=>x.id===id); if (!d) return;
+    d.proof = r.result; save(); toast('Proof uploaded'); closeModal(); openDetail(id);
+  };
+  r.readAsDataURL(f);
+}
+
+// ---------- Gallery ----------
+function renderGallery(root) {
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Food Gallery</h1><p>Every donation, in pictures.</p></div></div>
+    <div class="donation-grid">
+      ${state.donations.map(d => donationCardHTML(d)).join('')}
+    </div>
+  `;
+}
+
+// ---------- Volunteers ----------
+function renderVolunteers(root) {
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Volunteers</h1><p>${state.volunteers.length} active volunteers.</p></div></div>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Vehicle</th><th>Phone</th><th>Active Assignments</th></tr></thead>
+        <tbody>
+          ${state.volunteers.map(v => {
+            const active = state.donations.filter(d => d.volunteerId===v.id && d.status!=='delivered').length;
+            return `<tr>
+              <td><strong>${esc(v.name)}</strong></td>
+              <td>${esc(v.vehicle)}</td>
+              <td>${esc(v.phone)}</td>
+              <td>${active}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ---------- Connections ----------
+function renderConnections(root) {
+  // build restaurant → NGO connections
+  const conns = [];
+  state.restaurants.forEach(r => {
+    const donations = state.donations.filter(d => d.restaurantId === r.id || d.restaurantName === r.name);
+    const ngoMap = {};
+    donations.forEach(d => { if (d.ngoName) ngoMap[d.ngoName] = (ngoMap[d.ngoName]||0)+1; });
+    const ngoList = Object.keys(ngoMap);
+    conns.push({
+      restaurant: r.name, ngos: ngoList.length?ngoList.join(', '):'—',
+      total: donations.length,
+      status: donations.some(d=>d.status==='pending')?'Active':'Idle'
+    });
+  });
+  root.innerHTML = `
+    <div class="page-head"><div><h1>Restaurant ↔ NGO Connections</h1><p>Partnerships driving daily rescues.</p></div></div>
+    <div class="card table-wrap">
+      <table>
+        <thead><tr><th>Restaurant</th><th>Connected NGOs</th><th>Total Donations</th><th>Status</th></tr></thead>
+        <tbody>
+          ${conns.map(c => `<tr>
+            <td><strong>${esc(c.restaurant)}</strong></td>
+            <td>${esc(c.ngos)}</td>
+            <td>${c.total}</td>
+            <td><span class="badge ${c.status==='Active'?'badge-delivered':'badge-pending'}">${c.status}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ---------- Notifications ----------
+function pushNotif(title, desc) {
+  state.notifications.unshift({ id: uid(), title, desc, ts: Date.now() });
+  state.notifications = state.notifications.slice(0, 20);
+  save(); updateNotifDot();
+}
+function updateNotifDot() {
+  const dot = document.getElementById('notifDot');
+  if (dot) dot.style.display = state.notifications.length ? 'block' : 'none';
+}
+function toggleNotifs() {
+  let panel = document.getElementById('notifPanel');
+  if (panel) { panel.remove(); return; }
+  panel = document.createElement('div');
+  panel.id = 'notifPanel'; panel.className = 'notif-panel';
+  panel.innerHTML = state.notifications.length
+    ? state.notifications.map(n => `<div class="notif-item"><div class="t">${esc(n.title)}</div><div class="d">${esc(n.desc)}</div><div class="d" style="margin-top:2px; font-size:11px;">${timeUntil(new Date(n.ts).toISOString())}</div></div>`).join('')
+    : `<div class="notif-empty">🔔 No notifications</div>`;
+  document.querySelector('.topbar-right').appendChild(panel);
+  setTimeout(() => {
+    document.addEventListener('click', function h(e){
+      if (!panel.contains(e.target) && e.target.id !== 'notifBtn') { panel.remove(); document.removeEventListener('click', h); }
+    });
+  }, 10);
+}
+
+// ---------- Global search ----------
+function handleGlobalSearch(v) {
+  state.search = v.trim().toLowerCase();
+  if (currentPage === 'donations') {
+    const s = document.getElementById('searchInput'); if (s) { s.value = v; s.dispatchEvent(new Event('input')); }
+  }
+}
+
+// ---------- Modal ----------
+function showModal(html) {
+  const root = document.getElementById('modalRoot');
+  root.innerHTML = `<div class="modal-backdrop" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;
+}
+function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+// ---------- Boot ----------
+load();
+</script>
+</body>
+</html>
